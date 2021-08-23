@@ -1,6 +1,6 @@
 FROM quay.io/centos7/ruby-26-centos7
 
-ENV BUNDLER_VERSION="2.2.18" \
+ENV BUNDLER_VERSION="2.2.25" \
     OPENRESTY_VERSION=1.11.2.1 \
     LUAROCKS_VERSION=2.3.0 \
     NODEJS_SCL=rh-nodejs12
