@@ -1,4 +1,4 @@
-FROM quay.io/centos7/ruby-26-centos7
+FROM quay.io/centos7/ruby-27-centos7
 
 ENV BUNDLER_VERSION="2.2.25" \
     OPENRESTY_VERSION=1.11.2.1 \
