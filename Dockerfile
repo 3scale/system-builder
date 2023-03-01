@@ -61,6 +61,7 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
                    dbus \
                    unixODBC \
                    libatomic \
+                   liberation-sans-fonts \
   && wget http://mirror.centos.org/centos/7/os/x86_64/Packages/urw-fonts-2.4-16.el7.noarch.rpm \
   && rpm -ivh --nodeps urw-fonts-2.4-16.el7.noarch.rpm \
   && rm urw-fonts-2.4-16.el7.noarch.rpm  \
