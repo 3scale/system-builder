@@ -61,7 +61,7 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
                    openssl-devel \
                    libaio \
                    dbus \
-                   postgresql10 postgresql10-devel postgresql10-libs \
+                   postgresql13 postgresql13-devel postgresql13-libs \
                    unixODBC \
                    libatomic \
                    liberation-sans-fonts \
