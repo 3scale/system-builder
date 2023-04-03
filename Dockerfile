@@ -3,7 +3,7 @@ FROM quay.io/centos7/ruby-27-centos7
 ENV BUNDLER_VERSION="2.2.25" \
     OPENRESTY_VERSION=1.11.2.1 \
     LUAROCKS_VERSION=2.3.0 \
-    NODEJS_SCL=rh-nodejs12
+    NODEJS_SCL=rh-nodejs14
 
 ARG DB=mysql
 
@@ -28,7 +28,7 @@ RUN yum install -y git \
                    gcc-c++ \
                    make \
                    sudo \
-                   rh-nodejs12 \
+                   rh-nodejs14 \
                    file \
  && echo 'default        ALL=(ALL)       NOPASSWD: ALL' >> /etc/sudoers
 
