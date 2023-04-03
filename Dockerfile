@@ -47,9 +47,7 @@ gpgcheck=1\n\
 gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
  > /etc/yum.repos.d/google-chrome.repo \
   && yum-config-manager  --setopt=skip_missing_names_on_install=False --save \
-  && rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
   && yum update -y \
-  && yum remove -y postgresql \
   && yum install -y epel-release \
   && yum install -y mysql-devel \
                    firefox \
@@ -61,7 +59,6 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
                    openssl-devel \
                    libaio \
                    dbus \
-                   postgresql10 postgresql10-devel postgresql10-libs \
                    unixODBC \
                    libatomic \
   && wget http://mirror.centos.org/centos/7/os/x86_64/Packages/urw-fonts-2.4-16.el7.noarch.rpm \
@@ -78,8 +75,6 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
   && mv -f /tmp/chromedriver /usr/local/bin/chromedriver \
   && chown root:root /usr/local/bin/chromedriver \
   && chmod 0755 /usr/local/bin/chromedriver
-
-ENV PATH="$PATH:/usr/pgsql-10/bin"
 
 RUN source $ENV \
  && npm install yarn -g \
