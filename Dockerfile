@@ -3,7 +3,7 @@ FROM quay.io/centos7/ruby-26-centos7
 ENV BUNDLER_VERSION="2.2.25" \
     OPENRESTY_VERSION=1.11.2.1 \
     LUAROCKS_VERSION=2.3.0 \
-    NODEJS_SCL=rh-nodejs12
+    NODEJS_SCL=rh-nodejs14
 
 ARG DB=mysql
 
@@ -28,7 +28,7 @@ RUN yum install -y git \
                    gcc-c++ \
                    make \
                    sudo \
-                   rh-nodejs12 \
+                   rh-nodejs14 \
                    file \
  && echo 'default        ALL=(ALL)       NOPASSWD: ALL' >> /etc/sudoers
 
@@ -61,7 +61,7 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
                    openssl-devel \
                    libaio \
                    dbus \
-                   postgresql10 postgresql10-devel postgresql10-libs \
+                   postgresql13 postgresql13-devel postgresql13-libs \
                    unixODBC \
                    libatomic \
                    liberation-sans-fonts \
