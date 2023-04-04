@@ -80,7 +80,7 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
   && chown root:root /usr/local/bin/chromedriver \
   && chmod 0755 /usr/local/bin/chromedriver
 
-ENV PATH="$PATH:/usr/pgsql-10/bin"
+ENV PATH="$PATH:/usr/pgsql-13/bin"
 
 RUN source $ENV \
  && npm install yarn -g \
