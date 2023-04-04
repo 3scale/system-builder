@@ -35,7 +35,8 @@ RUN yum install -y git \
 RUN echo --color > ~/.rspec \
 # enables SCL collections, so that we can use bundler
  && source $ENV \
- && gem install bundler --version ${BUNDLER_VERSION} --no-doc
+ && gem install bundler --version ${BUNDLER_VERSION} --no-doc \
+ && bundle config build.pg --with-pg-config=/usr/pgsql-13/bin/pg_config
 
 # various system deps
 RUN echo $'\n\
