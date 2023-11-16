@@ -1,13 +1,10 @@
-FROM quay.io/centos7/ruby-27-centos7
+FROM quay.io/centos/centos:stream8
 
-ENV BUNDLER_VERSION="2.2.25" \
-    OPENRESTY_VERSION=1.11.2.1 \
-    LUAROCKS_VERSION=2.3.0 \
-    NODEJS_SCL=rh-nodejs12
+ENV BUNDLER_VERSION="2.2.25"
 
 ARG DB=mysql
 
-ENV PATH="./node_modules/.bin:$PATH:/usr/local/nginx/sbin/:/usr/local/luajit/bin/" \
+ENV PATH="./node_modules/.bin:$PATH" \
     DISPLAY=:99.0 \
     SKIP_ASSETS="1" \
     TZ=:/etc/localtime \
@@ -17,27 +14,28 @@ ENV PATH="./node_modules/.bin:$PATH:/usr/local/nginx/sbin/:/usr/local/luajit/bin
 
 USER root
 
-# rbenv-installer deps
-RUN yum install -y git \
-                   bzip2 \
-                   which \
-                   openssl-devel \
-                   readline-devel \
-                   zlib-devel \
-                   gcc \
-                   gcc-c++ \
-                   make \
-                   sudo \
-                   rh-nodejs12 \
-                   file \
- && echo 'default        ALL=(ALL)       NOPASSWD: ALL' >> /etc/sudoers
+RUN dnf -y module enable ruby:2.7 nodejs:16 mysql:8.0 \
+    && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs \
+        ruby-devel rubygem-rdoc rubygem-irb \
+        nodejs \
+        sudo which file shared-mime-info unzip jq git \
+        postgresql libpq-devel mysql-devel zlib-devel gd-devel \
+        make automake gcc gcc-c++ redhat-rpm-config \
+        # needed for PDF generation \
+        liberation-sans-fonts \
+        # needed for ruby-oci8 gem \
+        libnsl libaio \
+    && echo --color > ~/.rspec \
+    && gem install bundler --version ${BUNDLER_VERSION} --no-doc \
+    && echo 'default        ALL=(ALL)       NOPASSWD: ALL' >> /etc/sudoers \
+    && npm install -g yarn \
+    && rm -rf ~/.npm ~/.config
 
-RUN echo --color > ~/.rspec \
-# enables SCL collections, so that we can use bundler
- && source $ENV \
- && gem install bundler --version ${BUNDLER_VERSION} --no-doc
+# TODO: install memkind normally once officially in
+RUN dnf install -y "https://centos.softwarefactory-project.io/logs/4/4/f65898f1be48f564961dad8b0eb038ad822eebf4/check/mock-build/bbb5ef3/repo/memkind-1.10.1-2.el8/memkind-1.10.1-2.el8.x86_64.rpm"
+RUN ldconfig -p | grep libautohbw.so.0
 
-# various system deps
+# chrome + driver
 RUN echo $'\n\
 [google-chrome]\n\
 name=google-chrome\n\
@@ -46,67 +44,40 @@ enabled=1\n\
 gpgcheck=1\n\
 gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
  > /etc/yum.repos.d/google-chrome.repo \
-  && yum-config-manager  --setopt=skip_missing_names_on_install=False --save \
-  && yum update -y \
-  && yum install -y epel-release \
-  && yum install -y mysql-devel \
-                   firefox \
-                   google-chrome-stable \
-                   unzip \
-                   ImageMagick \
-                   ImageMagick-devel \
-                   pcre-devel \
-                   openssl-devel \
-                   libaio \
-                   dbus \
-                   unixODBC \
-                   libatomic \
-                   liberation-sans-fonts \
-  && wget http://mirror.centos.org/centos/7/os/x86_64/Packages/urw-fonts-2.4-16.el7.noarch.rpm \
-  && rpm -ivh --nodeps urw-fonts-2.4-16.el7.noarch.rpm \
-  && rm urw-fonts-2.4-16.el7.noarch.rpm  \
-  && yum update -y \
-  && yum clean all -y \
-  && curl http://sphinxsearch.com/files/sphinx-2.2.11-1.rhel7.x86_64.rpm > /tmp/sphinx-2.2.11-1.rhel7.x86_64.rpm \
-  && yum install -y /tmp/sphinx-2.2.11-1.rhel7.x86_64.rpm \
+  && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs firefox google-chrome-stable \
   && CHROME_VERSION=$(google-chrome --version | sed -e "s|[^0-9]*\([0-9]\+\).*|\1|") \
-  && wget -N https://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})/chromedriver_linux64.zip -P /tmp \
-  && unzip /tmp/chromedriver_linux64.zip -d /tmp \
-  && rm /tmp/chromedriver_linux64.zip \
+  && driver=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq --arg majorVersion "$CHROME_VERSION" -r '.channels.Stable | select(.version | startswith($majorVersion | tostring)).downloads.chromedriver[] | select(.platform == "linux64") | .url') \
+  && wget -N --progress=dot:giga "$driver" -O /tmp/chromedriver-linux64.zip \
+  && unzip -j /tmp/chromedriver-linux64.zip -d /tmp \
+  && rm /tmp/chromedriver-linux64.zip \
   && mv -f /tmp/chromedriver /usr/local/bin/chromedriver \
   && chown root:root /usr/local/bin/chromedriver \
   && chmod 0755 /usr/local/bin/chromedriver
 
-RUN source $ENV \
- && npm install yarn -g \
- && rm -rf ~/.npm ~/.config \
- && url=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | python -c "import sys, json; print(next(item['browser_download_url'] for item in json.load(sys.stdin)['assets'] if 'linux64' in item.get('browser_download_url', '')))") \
- && wget "$url" -O /tmp/geckodriver.tar.gz \
- && tar -xzvf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && rm -rf /tmp/geckodriver.tar.gz
+# geckodriver
+RUN geckodriver=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | jq -r '.assets[].browser_download_url | select(contains("linux64") and (endswith(".asc") | not))') \
+  && curl -sL "$geckodriver" | tar -xzv -C /usr/local/bin/
 
-WORKDIR /opt/system/
+# manticore search
+RUN dnf install -y https://repo.manticoresearch.com/manticore-repo.noarch.rpm \
+  && dnf install -y manticore-server
 
-RUN mkdir -p  /opt/system/tmp/cache/ \
-              /opt/system/vendor/bundle \
-              /opt/system/node_modules \
-              /opt/system/assets/jspm_packages \
-              /opt/system/public/assets \
-              /root/.jspm \
-              /home/ruby/.luarocks \
- && groupadd --gid 1042 3scale-dev \
- && usermod -aG 1042 default \
- && dbus-uuidgen | sudo tee /etc/machine-id \
- && chown -R default /opt/system
+WORKDIR /opt/ci
 
-VOLUME [ "/opt/system/tmp/cache/", \
-         "/opt/system/vendor/bundle", \
-         "/opt/system/node_modules", \
-         "/opt/system/assets/jspm_packages", \
-         "/opt/system/public/assets", \
-         "/root/.jspm", \
-         "/home/ruby/.luarocks" \
-       ]
+RUN dbus-uuidgen | tee /etc/machine-id \
+ && useradd -d /opt/ci -r default \
+ && chown -R default /opt/ci \
+ && chmod -R g+w /opt/ci \
+ && dnf clean all -y
+
+# TODO: circleci fails "Preparing environment variables" with these
+# ENV LD_PRELOAD=libautohbw.so.0 \
+#     AUTO_HBW_SIZE=10240G \
+#     AUTO_HBW_LOG=-2 \
+#     MEMKIND_HBW_NODES=0 \
+#     MEMKIND_HEAP_MANAGER=JEMALLOC
+# RUN ldd /bin/grep | grep libautohbw.so.0
 
 USER default
 
-ENTRYPOINT ["container-entrypoint"]
+ENTRYPOINT ["/bin/bash", "-c", "exec \"$@\"", "--"]
