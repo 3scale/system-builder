@@ -25,15 +25,26 @@ RUN dnf -y module enable ruby:2.7 nodejs:16 mysql:8.0 \
         liberation-sans-fonts \
         # needed for ruby-oci8 gem \
         libnsl libaio \
+        # needed to download memkind/jemalloc sources \
+        'dnf-command(download)' \
     && echo --color > ~/.rspec \
     && gem install bundler --version ${BUNDLER_VERSION} --no-doc \
     && echo 'default        ALL=(ALL)       NOPASSWD: ALL' >> /etc/sudoers \
     && npm install -g yarn \
     && rm -rf ~/.npm ~/.config
 
-# TODO: install memkind normally once officially in
-RUN dnf install -y "https://centos.softwarefactory-project.io/logs/4/4/f65898f1be48f564961dad8b0eb038ad822eebf4/check/mock-build/bbb5ef3/repo/memkind-1.10.1-2.el8/memkind-1.10.1-2.el8.x86_64.rpm"
-RUN ldconfig -p | grep libautohbw.so.0
+# we can just install memkind package once it is fixed, see
+# https://issues.redhat.com/browse/RHEL-14497
+RUN mkdir /tmp/memkind \
+    && cd /tmp/memkind \
+    && dnf download --source memkind \
+    && rpm2cpio memkind-*.src.rpm | cpio -idmv "memkind-*.tar.gz" \
+    && tar xvfz memkind-*.tar.gz \
+    && cd memkind-*/jemalloc/ \
+    && ./autogen.sh && ./configure --libdir=/usr/local/lib64/ && make install \
+    && echo /usr/local/lib64 > /etc/ld.so.conf.d/jemalloc.conf \
+    && ldconfig && ldconfig -p | grep jemalloc \
+    && cd && rm -rf /tmp/memkind
 
 # chrome + driver
 RUN echo $'\n\
