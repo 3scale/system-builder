@@ -19,7 +19,7 @@ RUN dnf -y module enable ruby:2.7 nodejs:16 mysql:8.0 \
         ruby-devel rubygem-rdoc rubygem-irb \
         nodejs \
         sudo which file shared-mime-info unzip jq git \
-        postgresql libpq-devel mysql-devel zlib-devel gd-devel \
+        postgresql libpq-devel mysql-devel zlib-devel gd-devel libxml2-devel libxslt-devel \
         make automake gcc gcc-c++ redhat-rpm-config \
         # needed for PDF generation \
         liberation-sans-fonts \
