@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 ENV BUNDLER_VERSION="2.2.25"
 
@@ -10,23 +10,26 @@ ENV PATH="./node_modules/.bin:$PATH" \
     TZ=:/etc/localtime \
     LD_LIBRARY_PATH="/opt/oracle/instantclient/:$LD_LIBRARY_PATH" \
     ORACLE_HOME=/opt/oracle/instantclient/ \
+    # This is to fix 'error:0308010C:digital envelope routines::unsupported' in Node 18
+    # the proper fix should be upgrading webpack and babel-loader
+    NODE_OPTIONS='--openssl-legacy-provider' \
     DB=$DB
 
 USER root
 
-RUN dnf -y module enable ruby:2.7 nodejs:16 mysql:8.0 \
+RUN dnf -y module enable ruby:3.1 nodejs:18 mariadb:10.11 \
     && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs \
-        ruby-devel rubygem-rdoc rubygem-irb \
+        ruby-devel rubygem-irb \
         nodejs \
-        sudo which file shared-mime-info unzip jq git \
-        postgresql libpq-devel mysql-devel zlib-devel gd-devel libxml2-devel libxslt-devel \
-        make automake gcc gcc-c++ redhat-rpm-config \
+        sudo which file shared-mime-info jq git \
+        postgresql libpq-devel mariadb-devel mysql zlib-devel gd-devel libxml2-devel libxslt-devel \
+        make automake gcc gcc-c++ \
         # needed for PDF generation \
         liberation-sans-fonts \
         # needed for ruby-oci8 gem \
         libnsl libaio \
         # needed to download memkind/jemalloc sources \
-        'dnf-command(download)' \
+        'dnf-command(download)' cpio \
     && echo --color > ~/.rspec \
     && gem install bundler --version ${BUNDLER_VERSION} --no-doc \
     && echo 'default        ALL=(ALL)       NOPASSWD: ALL' >> /etc/sudoers \
@@ -37,7 +40,7 @@ RUN dnf -y module enable ruby:2.7 nodejs:16 mysql:8.0 \
 # https://issues.redhat.com/browse/RHEL-14497
 RUN mkdir /tmp/memkind \
     && cd /tmp/memkind \
-    && dnf download --source memkind \
+    && dnf download http://mirror.stream.centos.org/9-stream/AppStream/source/tree/Packages/memkind-1.11.0-2.el9.src.rpm \
     && rpm2cpio memkind-*.src.rpm | cpio -idmv "memkind-*.tar.gz" \
     && tar xvfz memkind-*.tar.gz \
     && cd memkind-*/jemalloc/ \
@@ -60,7 +63,7 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
   && driver=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq --arg majorVersion "$CHROME_VERSION" -r '.channels.Stable | select(.version | startswith($majorVersion | tostring)).downloads.chromedriver[] | select(.platform == "linux64") | .url') \
   && wget -N --progress=dot:giga "$driver" -O /tmp/chromedriver-linux64.zip \
   && unzip -j /tmp/chromedriver-linux64.zip -d /tmp \
-  && rm /tmp/chromedriver-linux64.zip \
+  && rm -f /tmp/chromedriver-linux64.zip \
   && mv -f /tmp/chromedriver /usr/local/bin/chromedriver \
   && chown root:root /usr/local/bin/chromedriver \
   && chmod 0755 /usr/local/bin/chromedriver
@@ -75,7 +78,7 @@ RUN dnf install -y https://repo.manticoresearch.com/manticore-repo.noarch.rpm \
 
 WORKDIR /opt/ci
 
-RUN dbus-uuidgen | tee /etc/machine-id \
+RUN uuidgen | tee /etc/machine-id \
  && useradd -d /opt/ci -r default \
  && chown -R default /opt/ci \
  && chmod -R g+w /opt/ci \
