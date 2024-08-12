@@ -14,7 +14,9 @@ ENV PATH="./node_modules/.bin:$PATH" \
 
 USER root
 
-RUN dnf -y module enable ruby:2.7 nodejs:16 mysql:8.0 \
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* \
+    && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* \
+    && dnf -y module enable ruby:2.7 nodejs:16 mysql:8.0 \
     && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs \
         ruby-devel rubygem-rdoc rubygem-irb \
         nodejs \
