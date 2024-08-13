@@ -49,19 +49,11 @@ RUN mkdir /tmp/memkind \
     && ldconfig && ldconfig -p | grep jemalloc \
     && cd && rm -rf /tmp/memkind
 
-# chrome + driver
-RUN echo $'\n\
-[google-chrome]\n\
-name=google-chrome\n\
-baseurl=http://dl.google.com/linux/chrome/rpm/stable/x86_64\n\
-enabled=1\n\
-gpgcheck=1\n\
-gpgkey=https://dl.google.com/linux/linux_signing_key.pub' \
- > /etc/yum.repos.d/google-chrome.repo \
-  && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs firefox google-chrome-stable \
+RUN dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs firefox wget \
+  && wget -N --progress=dot:giga -O /tmp/google-chrome-stable-126.rpm "https://dl.google.com/linux/chrome/rpm/stable/x86_64/google-chrome-stable-126.0.6478.126-1.x86_64.rpm" \
+  && dnf install -y /tmp/google-chrome-stable-126.rpm \
   && CHROME_VERSION=$(google-chrome --version | sed -e "s|[^0-9]*\([0-9]\+\).*|\1|") \
-  && driver=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq --arg majorVersion "$CHROME_VERSION" -r '.channels.Stable | select(.version | startswith($majorVersion | tostring)).downloads.chromedriver[] | select(.platform == "linux64") | .url') \
-  && wget -N --progress=dot:giga "$driver" -O /tmp/chromedriver-linux64.zip \
+  && wget -N --progress=dot:giga "https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.126/linux64/chromedriver-linux64.zip" -O /tmp/chromedriver-linux64.zip \
   && unzip -j /tmp/chromedriver-linux64.zip -d /tmp \
   && rm /tmp/chromedriver-linux64.zip \
   && mv -f /tmp/chromedriver /usr/local/bin/chromedriver \
