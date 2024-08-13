@@ -17,12 +17,12 @@ ENV PATH="./node_modules/.bin:$PATH" \
 
 USER root
 
-RUN dnf -y module enable ruby:3.1 nodejs:18 mariadb:10.11 \
-    && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs \
+RUN dnf -y module enable ruby:3.1 nodejs:18 \
+    && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs --enablerepo=crb \
         ruby-devel rubygem-irb \
         nodejs \
         sudo which file shared-mime-info unzip jq git \
-        postgresql libpq-devel mariadb-devel mysql zlib-devel gd-devel libxml2-devel libxslt-devel \
+        postgresql libpq-devel mysql-devel zlib-devel gd-devel libxml2-devel libxslt-devel \
         make automake gcc gcc-c++ \
         # needed for PDF generation \
         liberation-sans-fonts \
@@ -56,7 +56,7 @@ name=google-chrome\n\
 baseurl=http://dl.google.com/linux/chrome/rpm/stable/x86_64\n\
 enabled=1\n\
 gpgcheck=1\n\
-gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
+gpgkey=https://dl.google.com/linux/linux_signing_key.pub' \
  > /etc/yum.repos.d/google-chrome.repo \
   && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs firefox google-chrome-stable \
   && CHROME_VERSION=$(google-chrome --version | sed -e "s|[^0-9]*\([0-9]\+\).*|\1|") \
