@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 ENV BUNDLER_VERSION="2.2.25"
 
@@ -10,25 +10,26 @@ ENV PATH="./node_modules/.bin:$PATH" \
     TZ=:/etc/localtime \
     LD_LIBRARY_PATH="/opt/oracle/instantclient/:$LD_LIBRARY_PATH" \
     ORACLE_HOME=/opt/oracle/instantclient/ \
+    # This is to fix 'error:0308010C:digital envelope routines::unsupported' in Node 18
+    # the proper fix should be upgrading webpack and babel-loader
+    NODE_OPTIONS='--openssl-legacy-provider' \
     DB=$DB
 
 USER root
 
-RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* \
-    && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* \
-    && dnf -y module enable ruby:3.1 nodejs:18 mysql:8.0 \
-    && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs \
-        ruby-devel rubygem-rdoc rubygem-irb \
+RUN dnf -y module enable ruby:3.1 nodejs:18 \
+    && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs --enablerepo=crb \
+        ruby-devel rubygem-irb \
         nodejs \
         sudo which file shared-mime-info unzip jq git \
         postgresql libpq-devel mysql-devel zlib-devel gd-devel libxml2-devel libxslt-devel \
-        make automake gcc gcc-c++ redhat-rpm-config \
+        make automake gcc gcc-c++ \
         # needed for PDF generation \
         liberation-sans-fonts \
         # needed for ruby-oci8 gem \
         libnsl libaio \
         # needed to download memkind/jemalloc sources \
-        'dnf-command(download)' \
+        'dnf-command(download)' cpio \
     && echo --color > ~/.rspec \
     && gem install bundler --version ${BUNDLER_VERSION} --no-doc \
     && echo 'default        ALL=(ALL)       NOPASSWD: ALL' >> /etc/sudoers \
@@ -77,7 +78,7 @@ RUN dnf install -y https://repo.manticoresearch.com/manticore-repo.noarch.rpm \
 
 WORKDIR /opt/ci
 
-RUN dbus-uuidgen | tee /etc/machine-id \
+RUN uuidgen | tee /etc/machine-id \
  && useradd -d /opt/ci -r default \
  && chown -R default /opt/ci \
  && chmod -R g+w /opt/ci \
