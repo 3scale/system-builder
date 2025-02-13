@@ -24,6 +24,8 @@ RUN dnf -y module enable ruby:3.1 nodejs:18 \
         sudo which file shared-mime-info unzip jq git \
         postgresql libpq-devel mysql-devel zlib-devel gd-devel libxml2-devel libxslt-devel \
         make automake gcc gcc-c++ \
+        # needed to log memory usage in CI \
+        procps-ng \
         # needed for PDF generation \
         liberation-sans-fonts \
         # needed for ruby-oci8 gem \
