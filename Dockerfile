@@ -1,6 +1,6 @@
 FROM quay.io/centos/centos:stream9
 
-ENV BUNDLER_VERSION="2.2.25"
+ENV BUNDLER_VERSION="2.3.27"
 
 ARG DB=mysql
 
