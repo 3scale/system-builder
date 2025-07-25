@@ -22,7 +22,7 @@ RUN dnf -y module enable ruby:3.1 nodejs:18 \
         ruby-devel rubygem-irb \
         nodejs \
         sudo which file shared-mime-info unzip jq git \
-        postgresql libpq-devel mysql-devel zlib-devel gd-devel libxml2-devel libxslt-devel \
+        postgresql libpq-devel mysql-devel zlib-devel gd-devel libxml2-devel libxslt-devel libyaml-devel \
         make automake gcc gcc-c++ \
         # needed to log memory usage in CI \
         procps-ng \
