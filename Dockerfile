@@ -1,6 +1,6 @@
 FROM quay.io/centos/centos:stream9
 
-ENV BUNDLER_VERSION="2.3.27"
+ENV BUNDLER_VERSION="2.5.22"
 
 ARG DB=mysql
 
@@ -17,7 +17,7 @@ ENV PATH="./node_modules/.bin:$PATH" \
 
 USER root
 
-RUN dnf -y module enable ruby:3.1 nodejs:18 \
+RUN dnf -y module enable ruby:3.3 nodejs:18 \
     && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs --enablerepo=crb \
         ruby-devel rubygem-irb \
         nodejs \
