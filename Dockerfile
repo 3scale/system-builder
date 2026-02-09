@@ -10,14 +10,11 @@ ENV PATH="./node_modules/.bin:$PATH" \
     TZ=:/etc/localtime \
     LD_LIBRARY_PATH="/opt/oracle/instantclient/:$LD_LIBRARY_PATH" \
     ORACLE_HOME=/opt/oracle/instantclient/ \
-    # This is to fix 'error:0308010C:digital envelope routines::unsupported' in Node 18
-    # the proper fix should be upgrading webpack and babel-loader
-    NODE_OPTIONS='--openssl-legacy-provider' \
     DB=$DB
 
 USER root
 
-RUN dnf -y module enable ruby:3.3 nodejs:18 \
+RUN dnf -y module enable ruby:3.3 nodejs:24 \
     && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs --enablerepo=crb \
         ruby-devel rubygem-irb \
         nodejs \
