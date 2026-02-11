@@ -10,14 +10,11 @@ ENV PATH="./node_modules/.bin:$PATH" \
     TZ=:/etc/localtime \
     LD_LIBRARY_PATH="/opt/oracle/instantclient/:$LD_LIBRARY_PATH" \
     ORACLE_HOME=/opt/oracle/instantclient/ \
-    # This is to fix 'error:0308010C:digital envelope routines::unsupported' in Node 18
-    # the proper fix should be upgrading webpack and babel-loader
-    NODE_OPTIONS='--openssl-legacy-provider' \
     DB=$DB
 
 USER root
 
-RUN dnf -y module enable ruby:3.3 nodejs:18 \
+RUN dnf -y module enable ruby:3.3 nodejs:24 \
     && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs --enablerepo=crb \
         ruby-devel rubygem-irb \
         nodejs \
@@ -62,9 +59,9 @@ gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub' \
  > /etc/yum.repos.d/google-chrome.repo \
   && dnf install -y --setopt=skip_missing_names_on_install=False,tsflags=nodocs firefox google-chrome-stable \
   && CHROME_VERSION=$(google-chrome --version | sed -e "s|[^0-9]*\([0-9]\+\).*|\1|") \
-  && driver=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq --arg majorVersion "$CHROME_VERSION" -r '.channels.Stable | select(.version | startswith($majorVersion | tostring)).downloads.chromedriver[] | select(.platform == "linux64") | .url') \
-  && wget -N --progress=dot:giga "$driver" -O /tmp/chromedriver-linux64.zip \
-  && unzip -j /tmp/chromedriver-linux64.zip -d /tmp \
+  && driver=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/latest-versions-per-milestone-with-downloads.json" | jq --arg milestone "$CHROME_VERSION" -r '.milestones[$milestone].downloads.chromedriver[] | select(.platform == "linux64") | .url') \
+  && wget -N "$driver" -O /tmp/chromedriver-linux64.zip \
+  && unzip -o -j /tmp/chromedriver-linux64.zip -d /tmp \
   && rm /tmp/chromedriver-linux64.zip \
   && mv -f /tmp/chromedriver /usr/local/bin/chromedriver \
   && chown root:root /usr/local/bin/chromedriver \
